@@ -7,7 +7,7 @@ import io.restassured.specification.RequestSpecification;
 
 public class OrderClient extends RestAssuredClient {
 
-    private final String ORDER = URL + "/orders";
+    private static final String ORDER = URL + "/orders";
 
     RequestSpecification requestSpec = new RequestSpecBuilder()
             .setBaseUri("https://stellarburgers.nomoreparties.site/api")

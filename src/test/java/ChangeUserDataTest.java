@@ -12,13 +12,12 @@ import static org.hamcrest.CoreMatchers.equalTo;
 public class ChangeUserDataTest {
 
     private UserClient userClient;
-    private OrderClient orderClient;
-    String accessToken;
+    private String accessToken;
     private User user;
+    private int code;
 
     @Before
     public void setUp() {
-        orderClient = new OrderClient();
         userClient = new UserClient();
         user = User.getRandom();
 
@@ -30,25 +29,31 @@ public class ChangeUserDataTest {
 
     @After
     public void tearDown() {
-        if (accessToken != null)
-            userClient.delete(accessToken);
+        if (code == 200) {
+            userClient.delete(accessToken).then().log().all();
+        } else {
+            UserCredentials creds = UserCredentials.from(user);
+            userClient.login(accessToken, creds);
+            userClient.delete(accessToken).then().log().all();
+        }
     }
 
     @Test
     @DisplayName("Check positive changing user data")
     public void changeUserDataPositiveTest() {
         UserCredentials creds = UserCredentials.from(user);
-
         userClient.login(accessToken, creds);
-        userClient.getData(accessToken);
 
+        userClient.getData(accessToken);
         User changeUser = User.getUserWithoutPassword();
-        Response changedUser = userClient.changeData(changeUser);
-        changedUser.then()
+        Response changedUser = userClient.changeData(accessToken, changeUser);
+        code = changedUser.then()
                 .log().all()
                 .assertThat()
                 .statusCode(200)
-                .body("user.email", equalTo(changeUser.getEmail().toLowerCase(Locale.ROOT)), "user.name", equalTo(changeUser.getName()));
+                .body("user.email", equalTo(changeUser.getEmail().toLowerCase(Locale.ROOT)), "user.name", equalTo(changeUser.getName()))
+                .extract()
+                .statusCode();
     }
 
     @Test
@@ -57,11 +62,13 @@ public class ChangeUserDataTest {
         userClient.getData(accessToken);
 
         User changeUser = User.getUserWithoutPassword();
-        Response changedUser = userClient.changeData(changeUser);
-        changedUser.then()
+        Response changedUser = userClient.changeDataNoAuth(changeUser);
+        code = changedUser.then()
                 .log().all()
                 .assertThat()
                 .statusCode(401)
-                .body("message", equalTo("You should be authorised"));
+                .body("message", equalTo("You should be authorised"))
+                .extract()
+                .statusCode();
     }
 }

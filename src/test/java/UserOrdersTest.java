@@ -12,8 +12,9 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 public class UserOrdersTest {
     private UserClient userClient;
     private OrderClient orderClient;
-    String accessToken;
+    private String accessToken;
     private User user;
+    private int code;
 
     @Before
     public void setUp() {
@@ -29,8 +30,13 @@ public class UserOrdersTest {
 
     @After
     public void tearDown() {
-        if (accessToken != null)
-            userClient.delete(accessToken);
+        if (code == 200) {
+            userClient.delete(accessToken).then().log().all();
+        } else {
+            UserCredentials creds = UserCredentials.from(user);
+            userClient.login(accessToken, creds);
+            userClient.delete(accessToken).then().log().all();
+        }
     }
 
     @Test
@@ -47,22 +53,25 @@ public class UserOrdersTest {
         orderClient.createOrder(accessToken, order);
 
         Response response = orderClient.getOrders(accessToken);
-        response.then()
+        code = response.then()
                 .log().all()
                 .assertThat()
                 .statusCode(200)
-                .body("orders.id",notNullValue());
-
+                .body("orders.id", notNullValue())
+                .extract()
+                .statusCode();
     }
 
     @Test
     @DisplayName("Check user orders without authorization")
     public void getOrdersNoAuth() {
         Response response = orderClient.getOrdersNoAuth();
-        response.then()
+        code = response.then()
                 .log().all()
                 .assertThat()
                 .statusCode(401)
-                .body("message", equalTo("You should be authorised"));
+                .body("message", equalTo("You should be authorised"))
+                .extract()
+                .statusCode();
     }
 }

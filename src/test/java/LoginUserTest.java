@@ -12,13 +12,11 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 public class LoginUserTest {
 
     private UserClient userClient;
-    private OrderClient orderClient;
-    String accessToken;
+    private String accessToken;
     private User user;
 
     @Before
     public void setUp() {
-        orderClient = new OrderClient();
         userClient = new UserClient();
         user = User.getRandom();
 
@@ -30,8 +28,7 @@ public class LoginUserTest {
 
     @After
     public void tearDown() {
-        if (accessToken != null)
-            userClient.delete(accessToken);
+            userClient.delete(accessToken).then().log().all();
     }
 
     @Test
@@ -43,9 +40,7 @@ public class LoginUserTest {
         responseLogin.then()
                 .assertThat()
                 .statusCode(200)
-                .body("accessToken", notNullValue())
-                .extract()
-                .path("accessToken");
+                .body("accessToken", notNullValue());
     }
 
     @Test

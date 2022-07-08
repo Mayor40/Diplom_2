@@ -16,13 +16,17 @@ import static org.hamcrest.Matchers.nullValue;
 public class OrderTest {
     private UserClient userClient;
     private OrderClient orderClient;
-    String accessToken;
+    private String accessToken;
     private User user;
+    private Ingredients ing;
+    private int code;
+
 
     @Before
     public void setUp() {
         orderClient = new OrderClient();
         userClient = new UserClient();
+        ing = new Ingredients();
         user = User.getRandom();
 
         Response responseCreate = userClient.create(user);
@@ -33,19 +37,28 @@ public class OrderTest {
 
     @After
     public void tearDown() {
-        if (accessToken != null)
-            userClient.delete(accessToken);
+        if (code == 200) {
+            userClient.delete(accessToken).then().log().all();
+        } else {
+            UserCredentials creds = UserCredentials.from(user);
+            userClient.login(accessToken, creds);
+            userClient.delete(accessToken).then().log().all();
+        }
     }
+
 
     @Test
     @DisplayName("Check positive order creation")
     public void createOrder() {
         UserCredentials creds = UserCredentials.from(user);
-        userClient.login(accessToken, creds);
+        Response response = userClient.login(accessToken, creds);
+        code = response.then()
+                .extract()
+                .statusCode();
         ArrayList<String> ingredients = new ArrayList<>();
-        ingredients.add("61c0c5a71d1f82001bdaaa75");
-        ingredients.add("61c0c5a71d1f82001bdaaa6e");
-        ingredients.add("61c0c5a71d1f82001bdaaa6d");
+        ingredients.add(ing.getIngredient1());
+        ingredients.add(ing.getIngredient2());
+        ingredients.add(ing.getIngredient3());
         Order order = new Order(ingredients);
 
         Response createdOrder = orderClient.createOrder(accessToken, order);
@@ -55,15 +68,16 @@ public class OrderTest {
                 .assertThat()
                 .statusCode(200)
                 .body("order.ingredients", notNullValue());
+
     }
 
     @Test
     @DisplayName("Check order creation without authorization")
     public void createOrderWithoutAuth() {
         ArrayList<String> ingredients = new ArrayList<>();
-        ingredients.add("61c0c5a71d1f82001bdaaa75");
-        ingredients.add("61c0c5a71d1f82001bdaaa6e");
-        ingredients.add("61c0c5a71d1f82001bdaaa6d");
+        ingredients.add(ing.getIngredient1());
+        ingredients.add(ing.getIngredient2());
+        ingredients.add(ing.getIngredient3());
         Order order = new Order(ingredients);
 
         Response createdOrder = orderClient.createOrderNoAuth(order);
@@ -79,7 +93,10 @@ public class OrderTest {
     @DisplayName("Check negative order creation without ingredients")
     public void createOrderWithoutIngredients() {
         UserCredentials creds = UserCredentials.from(user);
-        userClient.login(accessToken, creds);
+        Response response = userClient.login(accessToken, creds);
+        code = response.then()
+                .extract()
+                .statusCode();
         Order order = new Order();
 
         Response createdOrder = orderClient.createOrder(accessToken, order);
@@ -95,11 +112,14 @@ public class OrderTest {
     @DisplayName("Check negative order creation with incorrect ingredient hashcode")
     public void createOrderWrongHash() {
         UserCredentials creds = UserCredentials.from(user);
-        userClient.login(accessToken, creds);
+        Response response = userClient.login(accessToken, creds);
+        code = response.then()
+                .extract()
+                .statusCode();
         ArrayList<String> ingredients = new ArrayList<>();
-        ingredients.add("61c0c5a71d1f82001bdaaa75p");
-        ingredients.add("61c0c5a71d1f82001bdaaa6e");
-        ingredients.add("61c0c5a71d1f82001bdaaa6d");
+        ingredients.add(ing.getIngredient1() + "p");
+        ingredients.add(ing.getIngredient2());
+        ingredients.add(ing.getIngredient3());
         Order order = new Order(ingredients);
 
         Response createdOrder = orderClient.createOrder(accessToken, order);

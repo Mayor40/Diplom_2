@@ -14,13 +14,14 @@ public class UserClient extends RestAssuredClient {
             .setContentType(ContentType.JSON)
             .build();
 
-    private final String ROOT = "/auth";
-    private final String REG = ROOT + "/register";
-    private final String LOGIN = ROOT + "/login";
-    private final String USER = ROOT + "/user";
+    private  String ROOT = "/auth";
+    private  String REG = ROOT + "/register";
+    private  String LOGIN = ROOT + "/login";
+    private  String USER = ROOT + "/user";
 
     public Response create(User user) {
-        return reqSpec
+        return   RestAssured.given()
+                .spec(requestSpec)
                 .body(user)
                 .log().all()
                 .when()
@@ -28,9 +29,9 @@ public class UserClient extends RestAssuredClient {
     }
 
     public Response login(String accessToken, UserCredentials creds) {
-        return reqSpec
+        return RestAssured.given()
+                .spec(requestSpec)
                 .header("authorization", accessToken)
-                .contentType(ContentType.JSON)
                 .body(creds)
                 .log().all()
                 .when()
@@ -46,30 +47,38 @@ public class UserClient extends RestAssuredClient {
                 .get(USER);
     }
 
-    public Response changeData(User changedUser) {
-        return reqSpec
-                .contentType(ContentType.JSON)
+    public Response changeData(String accessToken, User changedUser) {
+        return RestAssured.given()
+                .spec(requestSpec)
+                .header("authorization", accessToken)
+                .body(changedUser)
+                .when()
+                .patch(USER);
+    }
+    public Response changeDataNoAuth(User changedUser) {
+        return RestAssured.given()
+                .spec(requestSpec)
                 .body(changedUser)
                 .when()
                 .patch(USER);
     }
 
-    public String createUserWithoutPassword(User user) {
-        return reqSpec
+    public int createUserWithoutPassword(User user) {
+        return RestAssured.given()
+                .spec(requestSpec)
                 .body(user)
                 .when()
                 .post(REG)
                 .then().log().all()
-                .assertThat()
-                .statusCode(403)
                 .extract()
-                .path("message");
+                .statusCode();
     }
 
-    public void delete(String accessToken) {
-        reqSpec
+    public Response delete(String accessToken) {
+        return  RestAssured.given()
+                .spec(requestSpec)
+                .header("authorization", accessToken)
                 .when()
                 .delete(USER);
     }
-
 }

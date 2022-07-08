@@ -13,58 +13,70 @@ import static org.hamcrest.CoreMatchers.equalTo;
 
 public class RegUserTest {
     private UserClient userClient;
-    String accessToken;
-    private User user;
+    private String accessToken;
+    private int code;
 
     @Before
     public void setUp() {
         userClient = new UserClient();
-        user = User.getRandom();
-
-        Response responseCreate = userClient.create(user);
-        accessToken = responseCreate.then()
-                .extract()
-                .path("accessToken");
     }
 
     @After
     public void tearDown() {
-        if (accessToken != null)
-            userClient.delete(accessToken);
+        if (accessToken != null | code == 200) {
+            userClient.delete(accessToken).then().log().all();
+        }
     }
 
     @Test
     @DisplayName("Check user registration")
     public void userCreateTest() {
         User user = User.getRandom();
-        Response created = userClient.create(user);
+        Response responseCreate = userClient.create(user);
+        accessToken = responseCreate.then()
+                .extract()
+                .path("accessToken");
 
-        created.then()
+        UserCredentials creds = UserCredentials.from(user);
+        userClient.login(accessToken, creds);
+
+        code = responseCreate.then()
                 .assertThat()
                 .statusCode(200)
-                .body("user.email", equalTo(user.getEmail().toLowerCase(Locale.ROOT)), "user.name", equalTo(user.getName()));
+                .body("user.email", equalTo(user.getEmail().toLowerCase(Locale.ROOT)), "user.name", equalTo(user.getName()))
+                .extract()
+                .statusCode();
     }
 
     @Test
     @DisplayName("Check user registration of two users with the same credentials")
     public void userDuplicateTest() {
+        User user = User.getRandom();
+        Response responseCreate = userClient.create(user);
+        accessToken = responseCreate.then()
+                .extract()
+                .path("accessToken");
+
+        UserCredentials creds = UserCredentials.from(user);
+        userClient.login(accessToken, creds);
 
         Response duplicate = userClient.create(user);
 
-        duplicate.then()
+        code = duplicate.then()
                 .assertThat()
                 .statusCode(403)
-                .body("message", equalTo("User already exists"));
-
+                .body("message", equalTo("User already exists"))
+                .extract()
+                .statusCode();
     }
 
     @Test
     @DisplayName("Check user registration without password")
     public void userWithoutPasswordTest() {
         User user = User.getUserWithoutPassword();
-        String expectedMessage = "Email, password and name are required fields";
-        String actualMessage = userClient.createUserWithoutPassword(user);
+        int expectedCode = 403;
+        code = userClient.createUserWithoutPassword(user);
 
-        Assert.assertEquals("Incorrect message", expectedMessage, actualMessage);
+        Assert.assertEquals("Incorrect message", expectedCode, code);
     }
 }
