@@ -1,7 +1,6 @@
 
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.Response;
-import io.restassured.response.ValidatableResponse;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -28,7 +27,7 @@ public class RegUserTest {
         if(accessToken != null){
         userClient.delete(accessToken).then().log().all();
         }
-        if (tokenChanged != null & code == 200) {
+        if (tokenChanged != null && code == 200) {
             userClient.delete(tokenChanged).then().log().all();
         }
     }

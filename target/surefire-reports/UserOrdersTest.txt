@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: UserOrdersTest
 -------------------------------------------------------------------------------
-Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.109 s - in UserOrdersTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.573 s - in UserOrdersTest
