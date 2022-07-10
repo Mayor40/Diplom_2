@@ -14,7 +14,6 @@ public class UserOrdersTest {
     private OrderClient orderClient;
     private String accessToken;
     private User user;
-    private int code;
 
     @Before
     public void setUp() {
@@ -30,13 +29,7 @@ public class UserOrdersTest {
 
     @After
     public void tearDown() {
-        if (code == 200) {
-            userClient.delete(accessToken).then().log().all();
-        } else {
-            UserCredentials creds = UserCredentials.from(user);
-            userClient.login(accessToken, creds);
-            userClient.delete(accessToken).then().log().all();
-        }
+        userClient.delete(accessToken).then().log().all();
     }
 
     @Test
@@ -52,26 +45,22 @@ public class UserOrdersTest {
 
         orderClient.createOrder(accessToken, order);
 
-        Response response = orderClient.getOrders(accessToken);
-        code = response.then()
+        Response userOrders = orderClient.getOrders(accessToken);
+        userOrders.then()
                 .log().all()
                 .assertThat()
                 .statusCode(200)
-                .body("orders.id", notNullValue())
-                .extract()
-                .statusCode();
+                .body("orders.id", notNullValue());
     }
 
     @Test
     @DisplayName("Check user orders without authorization")
     public void getOrdersNoAuth() {
-        Response response = orderClient.getOrdersNoAuth();
-        code = response.then()
+        Response userOrders = orderClient.getOrdersNoAuth();
+        userOrders.then()
                 .log().all()
                 .assertThat()
                 .statusCode(401)
-                .body("message", equalTo("You should be authorised"))
-                .extract()
-                .statusCode();
+                .body("message", equalTo("You should be authorised"));
     }
 }

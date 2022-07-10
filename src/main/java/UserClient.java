@@ -63,7 +63,7 @@ public class UserClient extends RestAssuredClient {
                 .patch(USER);
     }
 
-    public int createUserWithoutPassword(User user) {
+    public String createUserWithoutPassword(User user) {
         return RestAssured.given()
                 .spec(requestSpec)
                 .body(user)
@@ -71,7 +71,7 @@ public class UserClient extends RestAssuredClient {
                 .post(REG)
                 .then().log().all()
                 .extract()
-                .statusCode();
+                .path("message");
     }
 
     public Response delete(String accessToken) {

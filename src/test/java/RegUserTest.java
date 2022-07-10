@@ -1,6 +1,7 @@
 
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.Response;
+import io.restassured.response.ValidatableResponse;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -14,6 +15,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 public class RegUserTest {
     private UserClient userClient;
     private String accessToken;
+    private String tokenChanged;
     private int code;
 
     @Before
@@ -23,8 +25,11 @@ public class RegUserTest {
 
     @After
     public void tearDown() {
-        if (accessToken != null | code == 200) {
-            userClient.delete(accessToken).then().log().all();
+        if(accessToken != null){
+        userClient.delete(accessToken).then().log().all();
+        }
+        if (tokenChanged != null & code == 200) {
+            userClient.delete(tokenChanged).then().log().all();
         }
     }
 
@@ -40,7 +45,7 @@ public class RegUserTest {
         UserCredentials creds = UserCredentials.from(user);
         userClient.login(accessToken, creds);
 
-        code = responseCreate.then()
+        responseCreate.then()
                 .assertThat()
                 .statusCode(200)
                 .body("user.email", equalTo(user.getEmail().toLowerCase(Locale.ROOT)), "user.name", equalTo(user.getName()))
@@ -57,26 +62,25 @@ public class RegUserTest {
                 .extract()
                 .path("accessToken");
 
-        UserCredentials creds = UserCredentials.from(user);
-        userClient.login(accessToken, creds);
-
         Response duplicate = userClient.create(user);
 
-        code = duplicate.then()
-                .assertThat()
-                .statusCode(403)
-                .body("message", equalTo("User already exists"))
+        tokenChanged = duplicate.then()
                 .extract()
-                .statusCode();
+                .path("accessToken");
+        code = duplicate.getStatusCode();
+        duplicate.then()
+        .assertThat()
+        .statusCode(403)
+        .body("message", equalTo("User already exists"));
     }
 
     @Test
     @DisplayName("Check user registration without password")
     public void userWithoutPasswordTest() {
         User user = User.getUserWithoutPassword();
-        int expectedCode = 403;
-        code = userClient.createUserWithoutPassword(user);
+        String expected = "Email, password and name are required fields";
+        String actual = userClient.createUserWithoutPassword(user);
 
-        Assert.assertEquals("Incorrect message", expectedCode, code);
+        Assert.assertEquals("Incorrect message", expected, actual);
     }
 }

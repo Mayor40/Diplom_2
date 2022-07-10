@@ -19,8 +19,6 @@ public class OrderTest {
     private String accessToken;
     private User user;
     private Ingredients ing;
-    private int code;
-
 
     @Before
     public void setUp() {
@@ -37,13 +35,7 @@ public class OrderTest {
 
     @After
     public void tearDown() {
-        if (code == 200) {
-            userClient.delete(accessToken).then().log().all();
-        } else {
-            UserCredentials creds = UserCredentials.from(user);
-            userClient.login(accessToken, creds);
-            userClient.delete(accessToken).then().log().all();
-        }
+        userClient.delete(accessToken).then().log().all();
     }
 
 
@@ -51,10 +43,8 @@ public class OrderTest {
     @DisplayName("Check positive order creation")
     public void createOrder() {
         UserCredentials creds = UserCredentials.from(user);
-        Response response = userClient.login(accessToken, creds);
-        code = response.then()
-                .extract()
-                .statusCode();
+        userClient.login(accessToken, creds);
+
         ArrayList<String> ingredients = new ArrayList<>();
         ingredients.add(ing.getIngredient1());
         ingredients.add(ing.getIngredient2());
@@ -68,7 +58,6 @@ public class OrderTest {
                 .assertThat()
                 .statusCode(200)
                 .body("order.ingredients", notNullValue());
-
     }
 
     @Test
@@ -93,12 +82,9 @@ public class OrderTest {
     @DisplayName("Check negative order creation without ingredients")
     public void createOrderWithoutIngredients() {
         UserCredentials creds = UserCredentials.from(user);
-        Response response = userClient.login(accessToken, creds);
-        code = response.then()
-                .extract()
-                .statusCode();
-        Order order = new Order();
+        userClient.login(accessToken, creds);
 
+        Order order = new Order();
         Response createdOrder = orderClient.createOrder(accessToken, order);
 
         createdOrder.then()
@@ -112,10 +98,8 @@ public class OrderTest {
     @DisplayName("Check negative order creation with incorrect ingredient hashcode")
     public void createOrderWrongHash() {
         UserCredentials creds = UserCredentials.from(user);
-        Response response = userClient.login(accessToken, creds);
-        code = response.then()
-                .extract()
-                .statusCode();
+        userClient.login(accessToken, creds);
+
         ArrayList<String> ingredients = new ArrayList<>();
         ingredients.add(ing.getIngredient1() + "p");
         ingredients.add(ing.getIngredient2());
